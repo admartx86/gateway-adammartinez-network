@@ -2,24 +2,23 @@ require('dotenv').config();
 
 const fs = require('fs');
 const https = require('https');
-const express = require('express');
-const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const privateKeyPath = process.env.PRIVATE_KEY_PATH;
 const certificatePath = process.env.CERTIFICATE_PATH;
 const caPath = process.env.CA_PATH;
+
 const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
 const certificate = fs.readFileSync(certificatePath, 'utf8');
 const ca = fs.readFileSync(caPath, 'utf8');
 
 const credentials = { key: privateKey, cert: certificate, ca: ca };
 
+const express = require('express');
 const app = express();
-const domainMapping = {
-  'summitstyles.dev': 'http://localhost:3001'
-};
 
-// Create proxies first
+const { createProxyMiddleware } = require('http-proxy-middleware');
+const domainMappingEnv = process.env.DOMAIN_MAPPING || '';
+const domainMapping = Object.fromEntries(domainMappingEnv.split(',').map(pair => pair.split('=')));
 const proxies = {};
 for (let [host, target] of Object.entries(domainMapping)) {
   proxies[host] = createProxyMiddleware({
@@ -28,7 +27,6 @@ for (let [host, target] of Object.entries(domainMapping)) {
   });
 }
 
-// Redirect from http port 80 to https
 app.use((req, res, next) => {
   if (!req.secure) {
     return res.redirect(['https://', req.get('Host'), req.url].join(''));
@@ -36,7 +34,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Use them inside middleware
 app.use((req, res, next) => {
   const target = domainMapping[req.headers.host];
   if (target) {
@@ -46,12 +43,11 @@ app.use((req, res, next) => {
   }
 });
 
-app.listen(80, () => {
-  console.log('Redirecting HTTP traffic to HTTPS on http://localhost:80/');
+app.listen(process.env.HTTP_PORT, () => {
+  console.log(`Redirecting HTTP traffic from PORT ${process.env.HTTP_PORT} to PORT ${process.env.HTTPS_PORT}.`);
 });
 
 const httpsServer = https.createServer(credentials, app);
-
-httpsServer.listen(443, () => {
-  console.log('HTTPS Server running on port 443');
+httpsServer.listen(process.env.HTTPS_PORT, () => {
+  console.log(`Running HTTPS server on PORT ${process.env.HTTPS_PORT}.`);
 });
