@@ -12,9 +12,9 @@ const domainMapping = Object.fromEntries(domainMappingEnv.split(',').map(pair =>
 const sslCreds = {};
 for (const domain of Object.keys(domainMapping)) {
   sslCreds[domain] = {
-    key: fs.readFileSync(`etc/letsencrypt/live/${domain}/privkey.pem`, 'utf8'),
-    cert: fs.readFileSync(`etc/letsencrypt/live/${domain}/cert.pem`, 'utf8'),
-    ca: fs.readFileSync(`etc/letsencrypt/live/${domain}/chain.pem`, 'utf8')
+    key: fs.readFileSync(`/etc/letsencrypt/live/${domain}/privkey.pem`, 'utf8'),
+    cert: fs.readFileSync(`/etc/letsencrypt/live/${domain}/cert.pem`, 'utf8'),
+    ca: fs.readFileSync(`/etc/letsencrypt/live/${domain}/chain.pem`, 'utf8')
   };
 }
 
